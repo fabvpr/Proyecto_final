@@ -90,7 +90,7 @@ public class MainFrame extends JFrame {
         this.sistema = new SistemaLogistica();
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Red (Grafo)", new PanelRed());
+        tabs.addTab("Red (Grafo)", new PanelRed());          // <- cambiado
         tabs.addTab("Inventario (BST)", new PanelInventario());
         tabs.addTab("Historial (Lista Doble)", new PanelHistorial());
 
@@ -110,9 +110,14 @@ public class MainFrame extends JFrame {
     // =============== PANELES (CLASES INTERNAS) =================
     // ==========================================================
 
+    // ==========================================================
+    // PANEL RED (NUEVO ESTILO COMO PROYECTO 2)
+    // ==========================================================
     private class PanelRed extends JPanel {
 
-        private final JTextArea area;
+        private final JTextArea areaConexiones;
+        private final JComboBox<String> comboOrigen;
+        private final JComboBox<String> comboDestino;
 
         public PanelRed() {
             setLayout(new BorderLayout(10, 10));
@@ -120,168 +125,208 @@ public class MainFrame extends JFrame {
             JPanel contenedor = new JPanel();
             contenedor.setLayout(new BoxLayout(contenedor, BoxLayout.Y_AXIS));
 
-            // ========================
-            // SECCION AGREGAR NODO
-            // ========================
-            JPanel panelNodo = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            JTextField txtNodo = new JTextField(8);
-            JButton btnAgregarNodo = new JButton("Agregar Nodo");
+            // =============================
+            // AREA CONEXIONES DIRECTAS
+            // =============================
+            areaConexiones = new JTextArea(8, 50);
+            areaConexiones.setEditable(false);
+            JScrollPane scrollConexiones = new JScrollPane(areaConexiones);
+            scrollConexiones.setBorder(BorderFactory.createTitledBorder("Conexiones Directas"));
 
-            panelNodo.setBorder(BorderFactory.createTitledBorder("1) Agregar Nodo (letra/nombre)"));
+            // =============================
+            // PANEL NODOS
+            // =============================
+            JPanel panelNodo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            panelNodo.setBorder(BorderFactory.createTitledBorder("Gestión de Nodos"));
+
+            JTextField txtNodo = new JTextField(10);
+            JButton btnAgregarNodo = new JButton("Agregar Nodo");
+            JButton btnEliminarNodo = new JButton("Eliminar Nodo");
+
             panelNodo.add(new JLabel("Nodo:"));
             panelNodo.add(txtNodo);
             panelNodo.add(btnAgregarNodo);
+            panelNodo.add(btnEliminarNodo);
 
-            // ========================
-            // SECCION CONECTAR NODOS
-            // ========================
-            JPanel panelConexion = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            JTextField txtOrigen = new JTextField(8);
-            JTextField txtDestino = new JTextField(8);
-            JTextField txtPeso = new JTextField(6);
-            JButton btnConectar = new JButton("Conectar");
-
-            panelConexion.setBorder(BorderFactory.createTitledBorder("2) Crear Conexión (arista)"));
-            panelConexion.add(new JLabel("Origen:"));
-            panelConexion.add(txtOrigen);
-            panelConexion.add(new JLabel("Destino:"));
-            panelConexion.add(txtDestino);
-            panelConexion.add(new JLabel("Peso:"));
-            panelConexion.add(txtPeso);
-            panelConexion.add(btnConectar);
-
-            // ========================
-            // SECCION VALIDAR CONEXION DIRECTA
-            // ========================
-            JPanel panelCheck = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            JTextField txtC1 = new JTextField(8);
-            JTextField txtC2 = new JTextField(8);
-            JButton btnCheck = new JButton("Verificar Conexión");
-
-            panelCheck.setBorder(BorderFactory.createTitledBorder("3) Verificar si existe conexión directa"));
-            panelCheck.add(new JLabel("Nodo 1:"));
-            panelCheck.add(txtC1);
-            panelCheck.add(new JLabel("Nodo 2:"));
-            panelCheck.add(txtC2);
-            panelCheck.add(btnCheck);
-
-            // ========================
-            // SECCION DIJKSTRA (DENTRO DEL GRAFO)
-            // ========================
+            // =============================
+            // PANEL RUTAS (ARISTAS)
+            // =============================
             JPanel panelRuta = new JPanel(new FlowLayout(FlowLayout.LEFT));
-            JTextField txtInicio = new JTextField(8);
-            JTextField txtFin = new JTextField(8);
-            JButton btnBuscar = new JButton("Buscar Ruta Óptima");
+            panelRuta.setBorder(BorderFactory.createTitledBorder("Gestión de Rutas"));
 
-            panelRuta.setBorder(BorderFactory.createTitledBorder("4) Ruta Óptima (Dijkstra)"));
-            panelRuta.add(new JLabel("Inicio:"));
-            panelRuta.add(txtInicio);
-            panelRuta.add(new JLabel("Fin:"));
-            panelRuta.add(txtFin);
-            panelRuta.add(btnBuscar);
+            comboOrigen = new JComboBox<>();
+            comboDestino = new JComboBox<>();
+            JTextField txtDistancia = new JTextField(6);
 
-            // ========================
-            // AREA DE SALIDA
-            // ========================
-            area = new JTextArea();
-            area.setEditable(false);
-            JScrollPane sp = new JScrollPane(area);
+            JButton btnAgregarRuta = new JButton("Agregar Ruta");
+            JButton btnEliminarRuta = new JButton("Eliminar Ruta");
 
-            // ========================
-            // EVENTOS
-            // ========================
+            panelRuta.add(new JLabel("Origen:"));
+            panelRuta.add(comboOrigen);
+            panelRuta.add(new JLabel("Destino:"));
+            panelRuta.add(comboDestino);
+            panelRuta.add(new JLabel("Distancia:"));
+            panelRuta.add(txtDistancia);
+            panelRuta.add(btnAgregarRuta);
+            panelRuta.add(btnEliminarRuta);
 
+            // =============================
+            // PANEL CALCULAR RUTA MÁS CORTA
+            // =============================
+            JPanel panelCalculo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            panelCalculo.setBorder(BorderFactory.createTitledBorder("Ruta Más Corta (Dijkstra)"));
+
+            JButton btnCalcular = new JButton("Calcular");
+            JTextArea resultado = new JTextArea(4, 60);
+            resultado.setEditable(false);
+
+            panelCalculo.add(btnCalcular);
+            panelCalculo.add(new JScrollPane(resultado));
+
+            // ==================================================
+            // ================== EVENTOS =======================
+            // ==================================================
+
+            // AGREGAR NODO
             btnAgregarNodo.addActionListener(e -> {
                 String nombre = txtNodo.getText().trim();
-                if (nombre.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Ingrese un nombre de nodo (ej: A).");
-                    return;
-                }
+                if (nombre.isEmpty()) return;
 
                 boolean ok = sistema.getGrafo().agregarNodo(nombre);
-                if (!ok) JOptionPane.showMessageDialog(this, "El nodo ya existe o es inválido.");
+                if (!ok) {
+                    JOptionPane.showMessageDialog(this, "El nodo ya existe o es inválido.");
+                } else {
+                    // (opcional) registrar en historial de operaciones si quieres
+                    // sistema.getHistorial().agregarFinal(new Operacion(...));
+                }
 
                 txtNodo.setText("");
-                refrescar();
+                refrescarTodo();
             });
 
-            btnConectar.addActionListener(e -> {
+            // ELIMINAR NODO
+            btnEliminarNodo.addActionListener(e -> {
+                String nombre = txtNodo.getText().trim();
+                if (nombre.isEmpty()) return;
+
+                boolean ok = sistema.getGrafo().eliminarNodo(nombre);
+                if (!ok) {
+                    JOptionPane.showMessageDialog(this, "El nodo no existe.");
+                }
+
+                txtNodo.setText("");
+                refrescarTodo();
+            });
+
+            // AGREGAR RUTA
+            btnAgregarRuta.addActionListener(e -> {
                 try {
-                    String o = txtOrigen.getText().trim();
-                    String d = txtDestino.getText().trim();
-                    int w = Integer.parseInt(txtPeso.getText().trim());
-
-                    if (o.isEmpty() || d.isEmpty()) {
-                        JOptionPane.showMessageDialog(this, "Origen y Destino no pueden estar vacíos.");
-                        return;
-                    }
-                    if (w <= 0) {
-                        JOptionPane.showMessageDialog(this, "El peso debe ser > 0.");
+                    if (comboOrigen.getSelectedItem() == null || comboDestino.getSelectedItem() == null) {
+                        JOptionPane.showMessageDialog(this, "No hay nodos suficientes.");
                         return;
                     }
 
-                    boolean ok = sistema.getGrafo().agregarArista(o, d, w);
-                    if (!ok) JOptionPane.showMessageDialog(this, "No se pudo conectar: verifique nodos y peso.");
+                    String o = comboOrigen.getSelectedItem().toString();
+                    String d = comboDestino.getSelectedItem().toString();
+                    int dist = Integer.parseInt(txtDistancia.getText().trim());
 
-                    refrescar();
+                    if (o.equals(d)) {
+                        JOptionPane.showMessageDialog(this, "No puede conectar un nodo consigo mismo.");
+                        return;
+                    }
+                    if (dist <= 0) {
+                        JOptionPane.showMessageDialog(this, "La distancia debe ser > 0.");
+                        return;
+                    }
+
+                    boolean ok = sistema.getGrafo().agregarArista(o, d, dist);
+                    if (!ok) JOptionPane.showMessageDialog(this, "Error al agregar ruta (verifique nodos).");
+
+                    txtDistancia.setText("");
+                    refrescarTodo();
 
                 } catch (NumberFormatException ex) {
-                    JOptionPane.showMessageDialog(this, "Peso inválido.");
+                    JOptionPane.showMessageDialog(this, "Distancia inválida.");
                 }
             });
 
-            btnCheck.addActionListener(e -> {
-                String a = txtC1.getText().trim();
-                String b = txtC2.getText().trim();
-                if (a.isEmpty() || b.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Ingrese ambos nodos.");
-                    return;
-                }
-                if (!sistema.getGrafo().existeNodo(a) || !sistema.getGrafo().existeNodo(b)) {
-                    JOptionPane.showMessageDialog(this, "Uno o ambos nodos no existen.");
+            // ELIMINAR RUTA
+            btnEliminarRuta.addActionListener(e -> {
+                if (comboOrigen.getSelectedItem() == null || comboDestino.getSelectedItem() == null) {
+                    JOptionPane.showMessageDialog(this, "No hay nodos suficientes.");
                     return;
                 }
 
-                boolean existe = sistema.getGrafo().existeConexionDirecta(a, b);
-                JOptionPane.showMessageDialog(this,
-                        existe ? "Sí, existe conexión directa entre " + a.toUpperCase() + " y " + b.toUpperCase()
-                               : "No existe conexión directa entre " + a.toUpperCase() + " y " + b.toUpperCase());
+                String o = comboOrigen.getSelectedItem().toString();
+                String d = comboDestino.getSelectedItem().toString();
+
+                boolean ok = sistema.getGrafo().eliminarArista(o, d);
+                if (!ok) JOptionPane.showMessageDialog(this, "La ruta no existe.");
+
+                refrescarTodo();
             });
 
-            btnBuscar.addActionListener(e -> {
-                String i = txtInicio.getText().trim();
-                String f = txtFin.getText().trim();
-
-                if (i.isEmpty() || f.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Ingrese inicio y fin.");
+            // CALCULAR RUTA MÁS CORTA
+            btnCalcular.addActionListener(e -> {
+                if (comboOrigen.getSelectedItem() == null || comboDestino.getSelectedItem() == null) {
+                    JOptionPane.showMessageDialog(this, "No hay nodos suficientes.");
                     return;
                 }
 
-                GrafoPesado.ResultadoRuta r = sistema.getGrafo().dijkstra(i, f);
+                String o = comboOrigen.getSelectedItem().toString();
+                String d = comboDestino.getSelectedItem().toString();
+
+                GrafoPesado.ResultadoRuta r = sistema.getGrafo().dijkstra(o, d);
+
                 if (r.camino.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "No existe ruta entre " + i.toUpperCase() + " y " + f.toUpperCase());
+                    resultado.setText("No existe ruta.");
                 } else {
-                    JOptionPane.showMessageDialog(this,
-                            "Costo mínimo: " + r.costo + "\nCamino: " + String.join(" -> ", r.camino));
+                    resultado.setText(
+                            "Ruta: " + String.join(" -> ", r.camino) +
+                            "\nDistancia total: " + r.costo
+                    );
                 }
             });
 
+            // =============================
+            // ARMAR CONTENEDOR
+            // =============================
+            contenedor.add(scrollConexiones);
             contenedor.add(panelNodo);
-            contenedor.add(panelConexion);
-            contenedor.add(panelCheck);
             contenedor.add(panelRuta);
+            contenedor.add(panelCalculo);
 
-            add(contenedor, BorderLayout.NORTH);
-            add(sp, BorderLayout.CENTER);
+            add(contenedor, BorderLayout.CENTER);
 
-            refrescar();
+            refrescarTodo();
         }
 
-        private void refrescar() {
-            area.setText(sistema.getGrafo().mostrarComoTexto());
+        private void refrescarTodo() {
+            areaConexiones.setText(sistema.getGrafo().mostrarConexiones());
+            actualizarCombos();
+        }
+
+        private void actualizarCombos() {
+            String selO = (comboOrigen.getSelectedItem() != null) ? comboOrigen.getSelectedItem().toString() : null;
+            String selD = (comboDestino.getSelectedItem() != null) ? comboDestino.getSelectedItem().toString() : null;
+
+            comboOrigen.removeAllItems();
+            comboDestino.removeAllItems();
+
+            for (String nodo : sistema.getGrafo().getNombresNodos()) {
+                comboOrigen.addItem(nodo);
+                comboDestino.addItem(nodo);
+            }
+
+            // intentar restaurar selección
+            if (selO != null) comboOrigen.setSelectedItem(selO);
+            if (selD != null) comboDestino.setSelectedItem(selD);
         }
     }
 
+    // ==========================
+    // PANEL INVENTARIO (IGUAL)
+    // ==========================
     private class PanelInventario extends JPanel {
         private final DefaultTableModel model;
 
@@ -387,6 +432,9 @@ public class MainFrame extends JFrame {
         }
     }
 
+    // ==========================
+    // PANEL HISTORIAL (IGUAL)
+    // ==========================
     private class PanelHistorial extends JPanel {
         private ListaDoblementeEnlazada.Nodo<Operacion> cursor;
         private final DefaultTableModel model;
