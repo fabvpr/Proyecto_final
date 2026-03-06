@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Lista Enlazada</title>
+    <!-- Tailwind CSS para el diseño -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Iconos de Lucide -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Animaciones para cuando los nodos entran y salen */
+        .node-enter {
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.5) translateX(-20px); }
+            100% { opacity: 1; transform: scale(1) translateX(0); }
+        }
+        
+        /* Ocultar elementos al imprimir */
+        @media print {
+            .no-print { display: none !important; }
+            body { background-color: white !important; }
+            #listContainer { border: none !important; box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 antialiased font-sans min-h-screen flex flex-col">
+
+    <!-- Barra Superior -->
+    <header class="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-10 no-print">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2 text-indigo-600 font-bold text-lg">
+                <i data-lucide="git-commit" class="w-6 h-6"></i>
+                <span>Visualizador de Lista Enlazada</span>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="copiarEnlace()" class="flex items-center space-x-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors px-3 py-2 rounded-md hover:bg-gray-50">
+                    <i data-lucide="share-2" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Compartir App</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notificación Flotante -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-lg transform transition-all duration-300 translate-y-20 opacity-0 flex items-center space-x-2 z-50">
+        <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+        <span>¡Enlace copiado! Puedes compartirlo.</span>
+    </div>
+
+    <main class="flex-grow py-8 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full">
+        
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <!-- Panel de Control -->
+            <div class="bg-indigo-50/50 p-6 border-b border-gray-200 no-print">
+                <div class="flex flex-col sm:flex-row items-center gap-4">
+                    
+                    <div class="w-full sm:w-auto relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i data-lucide="hash" class="h-4 w-4 text-gray-400"></i>
+                        </div>
+                        <input type="text" id="nodeValue" placeholder="Valor (ej. 42)" 
+                            class="pl-10 pr-4 py-2.5 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm transition-all"
+                            onkeypress="if(event.key === 'Enter') agregarAlFinal()">
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                        <button onclick="agregarAlFinal()" class="flex-1 sm:flex-none flex items-center justify-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-lg shadow-sm transition-colors text-sm font-medium">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Añadir al Final</span>
+                        </button>
+                        
+                        <button onclick="agregarAlInicio()" class="flex-1 sm:flex-none flex items-center justify-center space-x-1 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm transition-colors text-sm font-medium">
+                            <i data-lucide="arrow-left-to-line" class="w-4 h-4 text-indigo-500"></i>
+                            <span>Añadir al Inicio</span>
+                        </button>
+
+                        <button onclick="eliminarUltimo()" class="flex-1 sm:flex-none flex items-center justify-center space-x-1 bg-white border border-gray-300 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-gray-700 px-4 py-2.5 rounded-lg shadow-sm transition-colors text-sm font-medium">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            <span>Eliminar Último</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área de Visualización (Canvas del Gráfico) -->
+            <div class="p-8 bg-[#f8fafc] min-h-[400px] flex flex-col relative overflow-hidden">
+                
+                <!-- Barra de Estado de la Animación -->
+                <div id="statusBar" class="mb-6 px-4 py-3 bg-blue-50 border border-blue-200 text-blue-800 rounded-lg flex items-center space-x-3 transition-all duration-300">
+                    <i data-lucide="info" class="w-5 h-5 flex-shrink-0" id="statusIcon"></i>
+                    <span id="statusText" class="font-medium text-sm sm:text-base">Esperando acción... Ingresa un valor y presiona un botón.</span>
+                </div>
+
+                <h3 class="absolute top-4 right-6 text-sm font-bold text-gray-400 uppercase tracking-wider hidden sm:block">Representación en Memoria</h3>
+                
+                <!-- Aquí se dibujarán los nodos -->
+                <div id="listContainer" class="flex flex-wrap items-center gap-y-6 overflow-x-auto py-8 px-4 w-full flex-grow content-center">
+                    <!-- El contenido se inyecta por JS -->
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 text-gray-500 text-sm text-center">
+            Prueba ingresando valores en la caja de texto y observa cómo la estructura de datos se modifica paso a paso.
+        </div>
+    </main>
+
+    <script>
+        // Inicializar iconos
+        lucide.createIcons();
+
+        // Utilidad para pausas (animaciones paso a paso)
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+        let isAnimating = false;
+
+        // ==========================================
+        // LÓGICA DE LA LISTA ENLAZADA
+        // ==========================================
+        class Node {
+            constructor(value) {
+                this.value = value;
+                this.next = null;
+            }
+        }
+
+        class LinkedList {
+            constructor() {
+                this.head = null;
+            }
+
+            append(value) {
+                const newNode = new Node(value);
+                if (!this.head) {
+                    this.head = newNode;
+                    return;
+                }
+                let current = this.head;
+                while (current.next) {
+                    current = current.next;
+                }
+                current.next = newNode;
+            }
+
+            prepend(value) {
+                const newNode = new Node(value);
+                newNode.next = this.head;
+                this.head = newNode;
+            }
+
+            removeLast() {
+                if (!this.head) return;
+                if (!this.head.next) {
+                    this.head = null;
+                    return;
+                }
+                let current = this.head;
+                while (current.next.next) {
+                    current = current.next;
+                }
+                current.next = null;
+            }
+
+            toArray() {
+                const result = [];
+                let current = this.head;
+                while (current) {
+                    result.push(current.value);
+                    current = current.next;
+                }
+                return result;
+            }
+        }
+
+        // Instancia global de la lista
+        const myLinkedList = new LinkedList();
+        myLinkedList.append(10);
+        myLinkedList.append(20);
+
+        // ==========================================
+        // LÓGICA DE INTERFAZ Y ANIMACIONES
+        // ==========================================
+
+        function setStatus(text, type = 'info') {
+            const statusText = document.getElementById('statusText');
+            const statusBar = document.getElementById('statusBar');
+            statusText.textContent = text;
+            
+            // Colores según el tipo de estado
+            statusBar.className = 'mb-6 px-4 py-3 rounded-lg flex items-center space-x-3 transition-all duration-300 shadow-sm ';
+            if (type === 'info') statusBar.className += 'bg-blue-50 border border-blue-200 text-blue-800';
+            if (type === 'success') statusBar.className += 'bg-green-50 border border-green-200 text-green-800';
+            if (type === 'warning') statusBar.className += 'bg-yellow-50 border border-yellow-200 text-yellow-800';
+            if (type === 'error') statusBar.className += 'bg-red-50 border border-red-200 text-red-800';
+        }
+
+        function lockUI() {
+            isAnimating = true;
+            document.querySelectorAll('button').forEach(b => {
+                // No bloquear el botón de compartir
+                if(!b.innerHTML.includes('Compartir')) {
+                    b.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                }
+            });
+            document.getElementById('nodeValue').disabled = true;
+        }
+
+        function unlockUI() {
+            isAnimating = false;
+            document.querySelectorAll('button').forEach(b => {
+                b.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+            });
+            document.getElementById('nodeValue').disabled = false;
+            document.getElementById('nodeValue').focus();
+        }
+
+        function highlightNode(index, isHighlight) {
+            const node = document.getElementById(`node-${index}`);
+            if (node) {
+                if (isHighlight) {
+                    node.classList.add('ring-4', 'ring-yellow-400', 'scale-110');
+                    node.classList.remove('border-indigo-500');
+                    node.classList.add('border-yellow-500');
+                } else {
+                    node.classList.remove('ring-4', 'ring-yellow-400', 'scale-110');
+                    node.classList.add('border-indigo-500');
+                    node.classList.remove('border-yellow-500');
+                }
+            }
+        }
+
+        function getInputValue() {
+            const input = document.getElementById('nodeValue');
+            let value = input.value.trim();
+            if (value === '') {
+                value = Math.floor(Math.random() * 100).toString();
+            }
+            input.value = '';
+            return value;
+        }
+
+        async function agregarAlFinal() {
+            if (isAnimating) return;
+            const val = getInputValue();
+            lockUI();
+            
+            setStatus(`Paso 1: Preparando nuevo nodo con valor [${val}]...`, 'info');
+            await sleep(1000);
+
+            const valores = myLinkedList.toArray();
+            
+            if (valores.length === 0) {
+                setStatus('Paso 2: La lista está vacía. HEAD apuntará directamente al nuevo nodo.', 'warning');
+                await sleep(1500);
+            } else {
+                setStatus('Paso 2: Recorriendo la lista desde HEAD para encontrar el último nodo...', 'warning');
+                await sleep(1000);
+                
+                // Animación de recorrido
+                for (let i = 0; i < valores.length; i++) {
+                    highlightNode(i, true);
+                    setStatus(`Visitando nodo con valor [${valores[i]}]...`, 'warning');
+                    await sleep(800);
+                    highlightNode(i, false);
+                }
+                
+                setStatus(`Último nodo encontrado. Conectando su puntero al nuevo nodo [${val}].`, 'info');
+                await sleep(1500);
+            }
+
+            myLinkedList.append(val);
+            renderizarGrafico();
+            
+            // Resaltar el nuevo nodo agregado
+            const nuevoIndice = myLinkedList.toArray().length - 1;
+            highlightNode(nuevoIndice, true);
+            setStatus(`¡Nodo [${val}] agregado al final exitosamente!`, 'success');
+            await sleep(1000);
+            highlightNode(nuevoIndice, false);
+            
+            setStatus('Esperando acción... Ingresa un valor y presiona un botón.', 'info');
+            unlockUI();
+        }
+
+        async function agregarAlInicio() {
+            if (isAnimating) return;
+            const val = getInputValue();
+            lockUI();
+
+            setStatus(`Paso 1: Creando nuevo nodo con valor [${val}]...`, 'info');
+            await sleep(1000);
+
+            setStatus(`Paso 2: Apuntando el 'next' del nuevo nodo al HEAD actual.`, 'warning');
+            await sleep(1500);
+            
+            setStatus(`Paso 3: Actualizando HEAD para que sea el nuevo nodo.`, 'warning');
+            await sleep(1500);
+
+            myLinkedList.prepend(val);
+            renderizarGrafico();
+            
+            // Resaltar el nodo agregado
+            highlightNode(0, true);
+            setStatus(`¡Nodo [${val}] agregado al inicio exitosamente!`, 'success');
+            await sleep(1000);
+            highlightNode(0, false);
+
+            setStatus('Esperando acción... Ingresa un valor y presiona un botón.', 'info');
+            unlockUI();
+        }
+
+        async function eliminarUltimo() {
+            if (isAnimating) return;
+            lockUI();
+
+            const valores = myLinkedList.toArray();
+            
+            if (valores.length === 0) {
+                setStatus('La lista ya está vacía. No hay nada que eliminar.', 'error');
+                await sleep(1500);
+                setStatus('Esperando acción... Ingresa un valor y presiona un botón.', 'info');
+                unlockUI();
+                return;
+            }
+
+            if (valores.length === 1) {
+                setStatus('Eliminando el único nodo de la lista. HEAD apuntará a null.', 'warning');
+                highlightNode(0, true);
+                await sleep(1500);
+            } else {
+                setStatus('Paso 1: Buscando el penúltimo nodo para desconectar el último...', 'warning');
+                await sleep(1000);
+                
+                // Recorrer hasta el penúltimo
+                for (let i = 0; i < valores.length - 1; i++) {
+                    highlightNode(i, true);
+                    setStatus(`Visitando nodo con valor [${valores[i]}]...`, 'warning');
+                    await sleep(800);
+                    
+                    if (i < valores.length - 2) {
+                        highlightNode(i, false);
+                    }
+                }
+                
+                setStatus(`Penúltimo nodo encontrado. Cortando conexión con el último nodo [${valores[valores.length-1]}].`, 'error');
+                const ultimoNodo = document.getElementById(`node-${valores.length-1}`);
+                if(ultimoNodo) {
+                    ultimoNodo.classList.add('opacity-50', 'scale-90', 'bg-red-50');
+                }
+                await sleep(2000);
+            }
+
+            myLinkedList.removeLast();
+            renderizarGrafico();
+            setStatus('¡Último nodo eliminado por el Garbage Collector (Recolector de basura)!', 'success');
+            await sleep(2000);
+            setStatus('Esperando acción... Ingresa un valor y presiona un botón.', 'info');
+            
+            unlockUI();
+        }
+
+        function renderizarGrafico() {
+            const container = document.getElementById('listContainer');
+            container.innerHTML = ''; 
+            
+            const valores = myLinkedList.toArray();
+
+            if (valores.length === 0) {
+                container.innerHTML = `
+                    <div class="w-full flex flex-col items-center justify-center text-gray-400 py-12 node-enter">
+                        <i data-lucide="ghost" class="w-16 h-16 mb-4 opacity-50"></i>
+                        <p class="text-lg">La lista está vacía.</p>
+                        <p class="text-sm opacity-75">Añade un nodo para comenzar.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            const headIndicator = document.createElement('div');
+            headIndicator.className = 'flex flex-col items-center mr-2 shrink-0 node-enter';
+            headIndicator.innerHTML = `
+                <span class="text-xs font-bold text-gray-400 mb-1">HEAD</span>
+                <i data-lucide="arrow-down" class="text-gray-400 w-5 h-5"></i>
+            `;
+            container.appendChild(headIndicator);
+
+            valores.forEach((val, index) => {
+                const nodeDiv = document.createElement('div');
+                nodeDiv.id = `node-${index}`;
+                nodeDiv.className = 'flex bg-white shadow-md border-2 border-indigo-500 rounded-lg overflow-hidden h-14 shrink-0 transition-all duration-300 node-enter';
+                
+                const dataBox = document.createElement('div');
+                dataBox.className = 'px-4 py-3 bg-indigo-50 font-mono font-bold text-indigo-700 border-r-2 border-indigo-500 min-w-[3.5rem] flex items-center justify-center';
+                dataBox.textContent = val;
+
+                const pointerBox = document.createElement('div');
+                pointerBox.className = 'px-3 py-3 bg-white flex items-center justify-center w-10 relative';
+                pointerBox.innerHTML = '<div class="w-2.5 h-2.5 bg-indigo-500 rounded-full"></div>';
+
+                nodeDiv.appendChild(dataBox);
+                nodeDiv.appendChild(pointerBox);
+                container.appendChild(nodeDiv);
+
+                const arrowDiv = document.createElement('div');
+                arrowDiv.className = 'mx-1 sm:mx-3 shrink-0 flex items-center text-indigo-300 node-enter';
+                arrowDiv.innerHTML = '<i data-lucide="arrow-right" class="w-6 h-6 sm:w-8 sm:h-8"></i>';
+                container.appendChild(arrowDiv);
+            });
+
+            const nullDiv = document.createElement('div');
+            nullDiv.className = 'px-4 py-3 font-mono font-bold text-gray-400 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 shrink-0 h-14 flex items-center node-enter';
+            nullDiv.textContent = 'null';
+            container.appendChild(nullDiv);
+
+            lucide.createIcons();
+        }
+
+        function copiarEnlace() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Simulador de Lista Enlazada',
+                    url: window.location.href
+                }).catch(console.error);
+            } else {
+                const enlace = window.location.href;
+                const inputOculto = document.createElement('input');
+                inputOculto.value = enlace;
+                document.body.appendChild(inputOculto);
+                inputOculto.select();
+                document.execCommand('copy');
+                document.body.removeChild(inputOculto);
+                
+                const toast = document.getElementById('toast');
+                toast.classList.remove('translate-y-20', 'opacity-0');
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-y-20', 'opacity-0');
+                }, 3000);
+            }
+        }
+
+        window.onload = renderizarGrafico;
+    </script>
+</body>
+</html>
