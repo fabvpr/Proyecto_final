@@ -54,22 +54,22 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
         this.sistema = new SistemaLogistica();
 
         JTabbedPane tabs = new JTabbedPane(); // es un conjunto de paneles
-        //cada uno de estos es un panle o pestaña
+        //cada uno de estos es un panel o pestaña
         tabs.addTab("Red (Grafo)", new PanelRed());//añade el nombre del panel y el contenido
         tabs.addTab("Inventario (BST)", new PanelInventario());
         tabs.addTab("Historial (Lista Doble)", new PanelHistorial());
 
-        setLayout(new BorderLayout());// forma de organizarce los elementos dentro de la ventana
-        add(tabs, BorderLayout.CENTER);//que se ubique en l centro y escala equivalentemente
+        setLayout(new BorderLayout());// forma de organizar los elementos dentro de la ventana
+        add(tabs, BorderLayout.CENTER);//que se ubique en el centro y escala equivalentemente
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);//finaliza la aplicación, cierra la ventana
         setSize(950, 650); //ancho y largo de la ventana en pixeles
-        setLocationRelativeTo(null);//para que emerga en el centro la ventana
+        setLocationRelativeTo(null);//para que emerja en el centro la ventana
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new MainFrame().setVisible(true));
-        //Ejecutar en el hilo gráfico:crear la ventana principal y mostrarla
+        //Ejecutar en el hilo gráfico:crear la ventana principal y mostrarla. inicia el programa
     }
 
     private class PanelRed extends JPanel {
@@ -79,13 +79,13 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
         private final JComboBox<String> comboDestino;
 
         public PanelRed() {
-            setLayout(new BorderLayout(10, 10));//espacio entre los componenetes(horizontal,verti)
+            setLayout(new BorderLayout(10, 10));//espacio entre los componenetes(horizontal,vertical)
 
             JPanel contenedor = new JPanel();
             contenedor.setLayout(new BoxLayout(contenedor, BoxLayout.Y_AXIS));//organiza elementos verticales
 
             areaConexiones = new JTextArea(8, 50);//(alto por ancho) 8 fila 50 colmunas o caracteres
-            areaConexiones.setEditable(false);// el ususuario no lo modifica el área
+            areaConexiones.setEditable(false);// el usuario no modifica el área
             JScrollPane scrollConexiones = new JScrollPane(areaConexiones);//barra de desplazamiento
             scrollConexiones.setBorder(BorderFactory.createTitledBorder("Conexiones Directas"));
             //limita el contenido a un borde que lo rodea
@@ -93,10 +93,10 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
             JPanel panelNodo = new JPanel(new FlowLayout(FlowLayout.LEFT));
             //organiza los componentes como palabras en una linea y los aline a la izq.
             panelNodo.setBorder(BorderFactory.createTitledBorder("Gestión de Nodos"));
-            //crea una borde con el nombre de ahi en el panel
+            //crea una borde con el nombre del panel
 
             JTextField txtNodo = new JTextField(10);//crea un campo de texo para ingresar nodos
-            //con 10 columnsa de ancho
+            //con 10 columnas de ancho
             JButton btnAgregarNodo = new JButton("Agregar Nodo");//boton de agregar
             JButton btnEliminarNodo = new JButton("Eliminar Nodo");//botón de elimar
 
@@ -134,7 +134,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
             panelCalculo.add(btnCalcular);
             panelCalculo.add(new JScrollPane(resultado));
 
-            btnAgregarNodo.addActionListener(e -> {//en agregar nodo se hace lo siguiente,e detonante
+            btnAgregarNodo.addActionListener(e -> {//en agregar nodo se hace lo siguiente
                 String nombre = txtNodo.getText().trim();
                 if (nombre.isEmpty()) return;
 
@@ -145,7 +145,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
                 txtNodo.setText("");//limpia el cuadro de texto para ingresar otro nodo
                 refrescarTodo();//metodo interno que actualiza el grafo
             });
-            //getText sirve para mostar lo que el usuarui escribio
+            //getText sirve para mostar lo que el usuario escribio
             btnEliminarNodo.addActionListener(e -> {String nombre = txtNodo.getText().trim();
                 if (nombre.isEmpty()) return;
                 boolean ok = sistema.getGrafo().eliminarNodo(nombre);//true se elimino correcto
@@ -185,7 +185,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
 
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(this, "Distancia inválida.");
-                    //ocurre cuando la distanci no es número
+                    //ocurre cuando la distancia no es número
                 }
             });
             btnEliminarRuta.addActionListener(e -> {
@@ -197,7 +197,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
                 String o = comboOrigen.getSelectedItem().toString();
                 String d = comboDestino.getSelectedItem().toString();
 
-                boolean ok = sistema.getGrafo().eliminarArista(o, d);//true si se elimina correcto
+                boolean ok = sistema.getGrafo().eliminarArista(o, d);//true si es que se elimina correcto
                 if (!ok) JOptionPane.showMessageDialog(this, "La ruta no existe.");
                 refrescarTodo();
             });
@@ -222,7 +222,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
                     );
                 }
             });
-            //los contenedores añaden los paneles que van aun panel grande(red de suministros)
+            //los contenedores añaden los paneles (red de suministros)
             contenedor.add(scrollConexiones);
             contenedor.add(panelNodo);
             contenedor.add(panelRuta);
@@ -255,7 +255,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
     }
 
     private class PanelInventario extends JPanel {
-        private final DefaultTableModel model;//modelo de datos deuna tabla
+        private final DefaultTableModel model;//modelo de datos de una tabla
 
         public PanelInventario() {
             setLayout(new BorderLayout(10, 10));
@@ -296,7 +296,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
             btnAlta.addActionListener(e -> {
                 try {
                     int id = Integer.parseInt(txtId.getText().trim());
-                    //convierte anumero el contendio de txtId
+                    //convierte a número el contendio de txtId
                     String nombre = txtNombre.getText().trim();
                     String categoria = txtCategoria.getText().trim();
                     int cant = Integer.parseInt(txtCantidad.getText().trim());
@@ -413,7 +413,7 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
         }
 
         private void cargarTablaCompleta() {
-            model.setRowCount(0);//borra todas las filas de la tabal
+            model.setRowCount(0);//borra todas las filas de la tabla
             ListaDoblementeEnlazada.Nodo<Operacion> it = sistema.getHistorial().getInicio();
             while (it != null) {
                 Operacion op = it.getDato();
@@ -437,6 +437,6 @@ public class MainFrame extends JFrame {//jFRame crea ventanas principales con in
                             "Categoría: " + op.getProductoCategoria() + "\n" +
                             "Cantidad: " + op.getCantidad() + "\n" +
                             "Obs: " + op.getObservacion());
-        }//para mostrar en especifico una ventana 
+        }//para mostrar en especifico una ventana pero tamién guarda todos los moviminetos de productos 
     }
 }

@@ -57,14 +57,14 @@ public class GrafoPesado {
 
         Map<Integer, Integer> oldToNew = new HashMap<>();
         List<String> nuevosNombres = new ArrayList<>();
-        //elimna el nodo
+        //elimina el nodo
         for (int old = 0, neu = 0; old < nombrePorIndice.size(); old++) {
             if (old == idxEliminar) continue;
             oldToNew.put(old, neu);
             nuevosNombres.add(nombrePorIndice.get(old));
             neu++;
         }
-        //elimna la arista
+        //elimina la arista
         List<List<Arista>> nuevaAdy = new ArrayList<>();
         for (int i = 0; i < nuevosNombres.size(); i++) nuevaAdy.add(new ArrayList<>());
         //Copiar aristas ignorando las que toquen al eliminado
@@ -80,7 +80,7 @@ public class GrafoPesado {
                 nuevaAdy.get(newU).add(new Arista(newV, a.peso));
             }
         }
-        // Rebuild final
+
         ady.clear();
         ady.addAll(nuevaAdy);
 
@@ -187,31 +187,31 @@ public class GrafoPesado {
             if (vis[u]) continue;
             vis[u] = true;
 
-            for (Arista a : ady.get(u)) {//guarda aristas ede u
-                int v = a.destino;//a donde llega un arista osea ariat de u a v
-                int nd = dist[u] + a.peso;//calula la distancia cacumula hasta u y el peso hasta av
+            for (Arista a : ady.get(u)) {//guarda aristas de u
+                int v = a.destino;//a donde llega un arista osea arista de u a v
+                int nd = dist[u] + a.peso;//calcula la distancia acumula hasta u y el peso hasta v
                 if (!vis[v] && nd < dist[v]) {//verifica si se escoge la distancia corta
-                    dist[v] = nd;//actualiza ladistancia
+                    dist[v] = nd;//actualiza la distancia
                     padre[v] = u;//actualiza el padre
                     pq.add(new int[]{v, dist[v]});//remplaza a u por el nodo con menor distancia
                 }// si no se cumeple el i entonces vuelve a entrar al for para buscar a otra arista 
             }//la cola queda vacia cuando se recorrio todos los caminos posibles
         }
-        if (dist[t] == INF) //verifica que esxita la ruta
-        	return new ResultadoRuta(INF, Collections.emptyList());//si no existe es pq su distancia es in
+        if (dist[t] == INF) //verifica si no esxite la ruta
+        	return new ResultadoRuta(INF, Collections.emptyList());//si no existe, su distancia es in
         return new ResultadoRuta(dist[t], reconstruir(padre, s, t));/*min dist, y reconstruir*/
     }
 
     private List<String> reconstruir(int[] padre, int inicio, int fin) {
         LinkedList<String> path = new LinkedList<>(); //permite gudars los padres desde el fin hasta el inico
         int cur = fin;//empieza en el nodo final
-        while (cur != -1) {///empieza des el fin hasta llegar al inicio
-            path.addFirst(nombrePorIndice.get(cur));//perimte añadir al inicio de la lista
+        while (cur != -1) {///empieza desde el fin hasta llegar al inicio
+            path.addFirst(nombrePorIndice.get(cur));//permite añadir al inicio de la lista
             if (cur == inicio) break;// verifica si llegamos la inicio
             cur = padre[cur];//vamos al nodo anterior	
         }
         return path;
-        //basicamente empieza al final pero va insertando al incio los anteriores para que impirma orecontrulla
+        //basicamente empieza al final pero va insertando al incio los anteriores para que recontrulla
         //el camino mas corto en orden [a,b,d,f] algo asi imrprimira empiezando desde f hasta a
     }
 }
