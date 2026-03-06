@@ -18,11 +18,6 @@ public class InventarioBST {
             this.categoria = categoria;
         }
 
-        // Opcional: constructor antiguo por compatibilidad
-        public Producto(int id, String nombre, int cantidad) {
-            this(id, nombre, cantidad, "Sin categoría");
-        }
-
         public int getId() { return id; }
 
         public String getNombre() { return nombre; }
@@ -36,14 +31,10 @@ public class InventarioBST {
 
         @Override
         public String toString() {
-            return "Producto{id=" + id +
-                    ", nombre='" + nombre + '\'' +
-                    ", categoria='" + categoria + '\'' +
-                    ", cantidad=" + cantidad +
-                    "}";
+            return "Producto{id=" + id +", nombre='" + nombre + '\'' +", categoria='" + 
+            		categoria + '\'' +", cantidad=" + cantidad +"}";
         }
     }
-
     private static class NodoP {
         Producto dato;
         NodoP izq, der;
@@ -52,7 +43,6 @@ public class InventarioBST {
 
     private NodoP raiz;
 
-    // Inserta SOLO si el ID no existe
     public boolean insertar(Producto p) {
         if (buscar(p.getId()) != null) return false;
         raiz = insertarRec(raiz, p);
@@ -75,8 +65,7 @@ public class InventarioBST {
         return null;
     }
 
-    // ACTUALIZAR incluyendo categoría
-    public boolean actualizar(int id, String nombre, int cantidad, String categoria) {
+   public boolean actualizar(int id, String nombre, int cantidad, String categoria) {
         Producto p = buscar(id);
         if (p == null) return false;
         p.setNombre(nombre);
@@ -100,7 +89,6 @@ public class InventarioBST {
             // 0 o 1 hijo
             if (n.izq == null) return n.der;
             if (n.der == null) return n.izq;
-
             // 2 hijos: reemplazar por sucesor inorder
             NodoP suc = minNodo(n.der);
             n.dato = suc.dato;

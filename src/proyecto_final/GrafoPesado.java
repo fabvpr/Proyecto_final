@@ -5,15 +5,15 @@ import java.util.*;
 public class GrafoPesado {
 
     public static class ResultadoRuta {
-        public final int costo;
+        //final: indica que el valor no puede modificarse una vez asigando
+    	public final int costo;
         public final List<String> camino;
-
+        //se usa para el método disjktra
         ResultadoRuta(int costo, List<String> camino) {
             this.costo = costo;
             this.camino = camino;
         }
     }
-
     private static class Arista {
         int destino, peso;
         Arista(int destino, int peso) {
@@ -21,7 +21,7 @@ public class GrafoPesado {
             this.peso = peso;
         }
     }
-
+    
     private final List<List<Arista>> ady = new ArrayList<>();
     private final Map<String, Integer> indicePorNombre = new HashMap<>();
     private final List<String> nombrePorIndice = new ArrayList<>();
@@ -32,13 +32,8 @@ public class GrafoPesado {
 
     public int getNumVertices() { return ady.size(); }
 
-    // =============================
-    // AGREGAR NODO
-    // =============================
     public boolean agregarNodo(String nombre) {
-        if (nombre == null) return false;
         nombre = nombre.trim().toUpperCase();
-        if (nombre.isEmpty()) return false;
 
         if (indicePorNombre.containsKey(nombre)) return false;
 
@@ -49,40 +44,30 @@ public class GrafoPesado {
         return true;
     }
 
-    public boolean existeNodo(String nombre) {
-        if (nombre == null) return false;
-        return indicePorNombre.containsKey(nombre.trim().toUpperCase());
-    }
-
     public Set<String> getNombresNodos() {
         return new TreeSet<>(indicePorNombre.keySet());
     }
 
-    // =============================
-    // ELIMINAR NODO (RECONSTRUYE INDICES)
-    // =============================
     public boolean eliminarNodo(String nombre) {
         if (nombre == null) return false;
         nombre = nombre.trim().toUpperCase();
-        if (!indicePorNombre.containsKey(nombre)) return false;
+        if (!indicePorNombre.containsKey(nombre)) return false;//NO EXISTE EL INDICE DE ESE NODO
 
         int idxEliminar = indicePorNombre.get(nombre);
 
-        // Rebuild: nuevo mapeo (todos menos el eliminado)
         Map<Integer, Integer> oldToNew = new HashMap<>();
         List<String> nuevosNombres = new ArrayList<>();
-
+        //elimna el nodo
         for (int old = 0, neu = 0; old < nombrePorIndice.size(); old++) {
             if (old == idxEliminar) continue;
             oldToNew.put(old, neu);
             nuevosNombres.add(nombrePorIndice.get(old));
             neu++;
         }
-
+        //elimna la arista
         List<List<Arista>> nuevaAdy = new ArrayList<>();
         for (int i = 0; i < nuevosNombres.size(); i++) nuevaAdy.add(new ArrayList<>());
-
-        // Copiar aristas ignorando las que toquen al eliminado
+        //Copiar aristas ignorando las que toquen al eliminado
         for (int oldU = 0; oldU < ady.size(); oldU++) {
             if (oldU == idxEliminar) continue;
             int newU = oldToNew.get(oldU);
@@ -95,7 +80,6 @@ public class GrafoPesado {
                 nuevaAdy.get(newU).add(new Arista(newV, a.peso));
             }
         }
-
         // Rebuild final
         ady.clear();
         ady.addAll(nuevaAdy);
@@ -111,37 +95,31 @@ public class GrafoPesado {
         return true;
     }
 
-    // =============================
-    // AGREGAR ARISTA (NO DIRIGIDO)
-    // =============================
     public boolean agregarArista(String origen, String destino, int peso) {
         if (origen == null || destino == null) return false;
         origen = origen.trim().toUpperCase();
         destino = destino.trim().toUpperCase();
-
-        if (!indicePorNombre.containsKey(origen) || !indicePorNombre.containsKey(destino)) return false;
+        
+        if (!indicePorNombre.containsKey(origen) 
+        		|| !indicePorNombre.containsKey(destino)) return false;
         if (peso <= 0) return false;
 
         int o = indicePorNombre.get(origen);
         int d = indicePorNombre.get(destino);
 
-        // opcional: evitar duplicados exactos (mismo destino) -> si quieres, descomenta
-        // if (existeConexionDirecta(origen, destino)) return false;
-
         ady.get(o).add(new Arista(d, peso));
         ady.get(d).add(new Arista(o, peso));
         return true;
     }
-
-    // =============================
-    // ELIMINAR ARISTA (NO DIRIGIDO)
-    // =============================
+    
     public boolean eliminarArista(String origen, String destino) {
         if (origen == null || destino == null) return false;
         origen = origen.trim().toUpperCase();
         destino = destino.trim().toUpperCase();
 
-        if (!indicePorNombre.containsKey(origen) || !indicePorNombre.containsKey(destino)) return false;
+        if (!indicePorNombre.containsKey(origen) 
+        		|| !indicePorNombre.containsKey(destino)) 
+        	return false;
 
         int o = indicePorNombre.get(origen);
         int d = indicePorNombre.get(destino);
@@ -151,29 +129,7 @@ public class GrafoPesado {
 
         return removed1 || removed2;
     }
-
-    // =============================
-    // CONEXION DIRECTA
-    // =============================
-    public boolean existeConexionDirecta(String origen, String destino) {
-        if (origen == null || destino == null) return false;
-        origen = origen.trim().toUpperCase();
-        destino = destino.trim().toUpperCase();
-
-        if (!indicePorNombre.containsKey(origen) || !indicePorNombre.containsKey(destino)) return false;
-
-        int o = indicePorNombre.get(origen);
-        int d = indicePorNombre.get(destino);
-
-        for (Arista a : ady.get(o)) {
-            if (a.destino == d) return true;
-        }
-        return false;
-    }
-
-    // =============================
-    // MOSTRAR (TIPO "A -> B (w) ...")
-    // =============================
+    
     public String mostrarConexiones() {
         StringBuilder sb = new StringBuilder();
 
@@ -197,32 +153,12 @@ public class GrafoPesado {
         return sb.toString();
     }
 
-    // (tu método anterior lo dejo por compatibilidad)
-    public String mostrarComoTexto() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < ady.size(); i++) {
-            sb.append(nombrePorIndice.get(i)).append(": ");
-            for (Arista a : ady.get(i)) {
-                sb.append("-> (")
-                  .append(nombrePorIndice.get(a.destino))
-                  .append(", w=")
-                  .append(a.peso)
-                  .append(") ");
-            }
-            sb.append("\n");
-        }
-        return sb.toString();
-    }
-
-    // =============================
-    // DIJKSTRA (POR LETRAS)
-    // =============================
     public ResultadoRuta dijkstra(String inicio, String fin) {
-        if (inicio == null || fin == null) return new ResultadoRuta(INF, Collections.emptyList());
         inicio = inicio.trim().toUpperCase();
         fin = fin.trim().toUpperCase();
 
-        if (!indicePorNombre.containsKey(inicio) || !indicePorNombre.containsKey(fin)) {
+        if (!indicePorNombre.containsKey(inicio) 
+        		|| !indicePorNombre.containsKey(fin)) {
             return new ResultadoRuta(INF, Collections.emptyList());
         }
 
@@ -233,7 +169,10 @@ public class GrafoPesado {
 
         Arrays.fill(dist, INF);
         Arrays.fill(padre, -1);
-
+        //dis[]=[1,3,6,4,3]
+        //dist=[inf,inf,inf,inf,inf]
+        //padre[]=[A,C,D,E]
+        //padre=[-1,0,1,2,3]
         int s = indicePorNombre.get(inicio);
         int t = indicePorNombre.get(fin);
 
@@ -248,29 +187,31 @@ public class GrafoPesado {
             if (vis[u]) continue;
             vis[u] = true;
 
-            for (Arista a : ady.get(u)) {
-                int v = a.destino;
-                int nd = dist[u] + a.peso;
-                if (!vis[v] && nd < dist[v]) {
-                    dist[v] = nd;
-                    padre[v] = u;
-                    pq.add(new int[]{v, dist[v]});
-                }
-            }
+            for (Arista a : ady.get(u)) {//guarda aristas ede u
+                int v = a.destino;//a donde llega un arista osea ariat de u a v
+                int nd = dist[u] + a.peso;//calula la distancia cacumula hasta u y el peso hasta av
+                if (!vis[v] && nd < dist[v]) {//verifica si se escoge la distancia corta
+                    dist[v] = nd;//actualiza ladistancia
+                    padre[v] = u;//actualiza el padre
+                    pq.add(new int[]{v, dist[v]});//remplaza a u por el nodo con menor distancia
+                }// si no se cumeple el i entonces vuelve a entrar al for para buscar a otra arista 
+            }//la cola queda vacia cuando se recorrio todos los caminos posibles
         }
-
-        if (dist[t] == INF) return new ResultadoRuta(INF, Collections.emptyList());
-        return new ResultadoRuta(dist[t], reconstruir(padre, s, t));
+        if (dist[t] == INF) //verifica que esxita la ruta
+        	return new ResultadoRuta(INF, Collections.emptyList());//si no existe es pq su distancia es in
+        return new ResultadoRuta(dist[t], reconstruir(padre, s, t));/*min dist, y reconstruir*/
     }
 
     private List<String> reconstruir(int[] padre, int inicio, int fin) {
-        LinkedList<String> path = new LinkedList<>();
-        int cur = fin;
-        while (cur != -1) {
-            path.addFirst(nombrePorIndice.get(cur));
-            if (cur == inicio) break;
-            cur = padre[cur];
+        LinkedList<String> path = new LinkedList<>(); //permite gudars los padres desde el fin hasta el inico
+        int cur = fin;//empieza en el nodo final
+        while (cur != -1) {///empieza des el fin hasta llegar al inicio
+            path.addFirst(nombrePorIndice.get(cur));//perimte añadir al inicio de la lista
+            if (cur == inicio) break;// verifica si llegamos la inicio
+            cur = padre[cur];//vamos al nodo anterior	
         }
         return path;
+        //basicamente empieza al final pero va insertando al incio los anteriores para que impirma orecontrulla
+        //el camino mas corto en orden [a,b,d,f] algo asi imrprimira empiezando desde f hasta a
     }
 }

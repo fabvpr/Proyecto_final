@@ -1,12 +1,11 @@
 package proyecto_final;
 
-import javax.swing.*;
+import javax.swing.*;//libreria para la interfaz gráfica
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-public class MainFrame extends JFrame {
+public class MainFrame extends JFrame {//jFRame crea ventanas principales con interfaz gráfica
 
-    // ======== SISTEMA CENTRAL (CLASE INTERNA) ========
     private static class SistemaLogistica {
         private final InventarioBST inventario = new InventarioBST();
         private final ListaDoblementeEnlazada<Operacion> historial = new ListaDoblementeEnlazada<>();
@@ -22,11 +21,9 @@ public class MainFrame extends JFrame {
 
         public boolean altaProducto(int id, String nombre, String categoria, int cantidad) {
             boolean ok = inventario.insertar(new InventarioBST.Producto(id, nombre, cantidad, categoria));
-            if (ok) historial.agregarFinal(new Operacion(
-                    Operacion.TipoOperacion.INGRESO,
-                    id, nombre, categoria, cantidad,
-                    "Alta de producto"
-            ));
+            //indica que se a insertado correctamente en el invetario
+            if (ok) historial.agregarFinal(new Operacion(Operacion.TipoOperacion.INGRESO,
+            		id, nombre, categoria, cantidad,"Alta de producto"));
             return ok;
         }
 
@@ -37,120 +34,77 @@ public class MainFrame extends JFrame {
             if (ok) historial.agregarFinal(new Operacion(
                     Operacion.TipoOperacion.SALIDA,
                     id, p.getNombre(), p.getCategoria(), p.getCantidad(),
-                    "Baja de producto"
-            ));
+                    "Baja de producto"));
             return ok;
         }
 
         public boolean actualizarProducto(int id, String nombre, String categoria, int cantidad) {
             boolean ok = inventario.actualizar(id, nombre, cantidad, categoria);
-            if (ok) historial.agregarFinal(new Operacion(
-                    Operacion.TipoOperacion.INGRESO,
-                    id, nombre, categoria, cantidad,
-                    "Actualización"
-            ));
+            if (ok) historial.agregarFinal(new Operacion(Operacion.TipoOperacion.INGRESO,
+                    id, nombre, categoria, cantidad,"Actualización"));
             return ok;
-        }
-
-        public boolean salidaStock(int id, int cantidad, String obs) {
-            InventarioBST.Producto p = inventario.buscar(id);
-            if (p == null) return false;
-            if (cantidad <= 0 || p.getCantidad() < cantidad) return false;
-
-            p.setCantidad(p.getCantidad() - cantidad);
-            historial.agregarFinal(new Operacion(
-                    Operacion.TipoOperacion.SALIDA,
-                    id, p.getNombre(), p.getCategoria(), cantidad,
-                    obs
-            ));
-            return true;
-        }
-
-        public boolean ingresoStock(int id, int cantidad, String obs) {
-            InventarioBST.Producto p = inventario.buscar(id);
-            if (p == null) return false;
-            if (cantidad <= 0) return false;
-
-            p.setCantidad(p.getCantidad() + cantidad);
-            historial.agregarFinal(new Operacion(
-                    Operacion.TipoOperacion.INGRESO,
-                    id, p.getNombre(), p.getCategoria(), cantidad,
-                    obs
-            ));
-            return true;
         }
     }
 
-    // ======== UI ========
     private final SistemaLogistica sistema;
 
-    public MainFrame() {
+    public MainFrame() {//diseño de la ventana general
         super("Proyecto Final - Logística (Compacto)");
 
         this.sistema = new SistemaLogistica();
 
-        JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Red (Grafo)", new PanelRed());          // <- cambiado
+        JTabbedPane tabs = new JTabbedPane(); // es un conjunto de paneles
+        //cada uno de estos es un panle o pestaña
+        tabs.addTab("Red (Grafo)", new PanelRed());//añade el nombre del panel y el contenido
         tabs.addTab("Inventario (BST)", new PanelInventario());
         tabs.addTab("Historial (Lista Doble)", new PanelHistorial());
 
-        setLayout(new BorderLayout());
-        add(tabs, BorderLayout.CENTER);
+        setLayout(new BorderLayout());// forma de organizarce los elementos dentro de la ventana
+        add(tabs, BorderLayout.CENTER);//que se ubique en l centro y escala equivalentemente
 
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(950, 650);
-        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);//finaliza la aplicación, cierra la ventana
+        setSize(950, 650); //ancho y largo de la ventana en pixeles
+        setLocationRelativeTo(null);//para que emerga en el centro la ventana
     }
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new MainFrame().setVisible(true));
+        //Ejecutar en el hilo gráfico:crear la ventana principal y mostrarla
     }
 
-    // ==========================================================
-    // =============== PANELES (CLASES INTERNAS) =================
-    // ==========================================================
-
-    // ==========================================================
-    // PANEL RED (NUEVO ESTILO COMO PROYECTO 2)
-    // ==========================================================
     private class PanelRed extends JPanel {
 
-        private final JTextArea areaConexiones;
+        private final JTextArea areaConexiones; //área de textos
         private final JComboBox<String> comboOrigen;
         private final JComboBox<String> comboDestino;
 
         public PanelRed() {
-            setLayout(new BorderLayout(10, 10));
+            setLayout(new BorderLayout(10, 10));//espacio entre los componenetes(horizontal,verti)
 
             JPanel contenedor = new JPanel();
-            contenedor.setLayout(new BoxLayout(contenedor, BoxLayout.Y_AXIS));
+            contenedor.setLayout(new BoxLayout(contenedor, BoxLayout.Y_AXIS));//organiza elementos verticales
 
-            // =============================
-            // AREA CONEXIONES DIRECTAS
-            // =============================
-            areaConexiones = new JTextArea(8, 50);
-            areaConexiones.setEditable(false);
-            JScrollPane scrollConexiones = new JScrollPane(areaConexiones);
+            areaConexiones = new JTextArea(8, 50);//(alto por ancho) 8 fila 50 colmunas o caracteres
+            areaConexiones.setEditable(false);// el ususuario no lo modifica el área
+            JScrollPane scrollConexiones = new JScrollPane(areaConexiones);//barra de desplazamiento
             scrollConexiones.setBorder(BorderFactory.createTitledBorder("Conexiones Directas"));
+            //limita el contenido a un borde que lo rodea
 
-            // =============================
-            // PANEL NODOS
-            // =============================
             JPanel panelNodo = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            //organiza los componentes como palabras en una linea y los aline a la izq.
             panelNodo.setBorder(BorderFactory.createTitledBorder("Gestión de Nodos"));
+            //crea una borde con el nombre de ahi en el panel
 
-            JTextField txtNodo = new JTextField(10);
-            JButton btnAgregarNodo = new JButton("Agregar Nodo");
-            JButton btnEliminarNodo = new JButton("Eliminar Nodo");
+            JTextField txtNodo = new JTextField(10);//crea un campo de texo para ingresar nodos
+            //con 10 columnsa de ancho
+            JButton btnAgregarNodo = new JButton("Agregar Nodo");//boton de agregar
+            JButton btnEliminarNodo = new JButton("Eliminar Nodo");//botón de elimar
 
-            panelNodo.add(new JLabel("Nodo:"));
+            panelNodo.add(new JLabel("Nodo:"));//crea un texto especificado que se alinea al borde inicial
             panelNodo.add(txtNodo);
             panelNodo.add(btnAgregarNodo);
             panelNodo.add(btnEliminarNodo);
 
-            // =============================
-            // PANEL RUTAS (ARISTAS)
-            // =============================
             JPanel panelRuta = new JPanel(new FlowLayout(FlowLayout.LEFT));
             panelRuta.setBorder(BorderFactory.createTitledBorder("Gestión de Rutas"));
 
@@ -170,9 +124,6 @@ public class MainFrame extends JFrame {
             panelRuta.add(btnAgregarRuta);
             panelRuta.add(btnEliminarRuta);
 
-            // =============================
-            // PANEL CALCULAR RUTA MÁS CORTA
-            // =============================
             JPanel panelCalculo = new JPanel(new FlowLayout(FlowLayout.LEFT));
             panelCalculo.setBorder(BorderFactory.createTitledBorder("Ruta Más Corta (Dijkstra)"));
 
@@ -183,42 +134,28 @@ public class MainFrame extends JFrame {
             panelCalculo.add(btnCalcular);
             panelCalculo.add(new JScrollPane(resultado));
 
-            // ==================================================
-            // ================== EVENTOS =======================
-            // ==================================================
-
-            // AGREGAR NODO
-            btnAgregarNodo.addActionListener(e -> {
+            btnAgregarNodo.addActionListener(e -> {//en agregar nodo se hace lo siguiente,e detonante
                 String nombre = txtNodo.getText().trim();
                 if (nombre.isEmpty()) return;
 
-                boolean ok = sistema.getGrafo().agregarNodo(nombre);
+                boolean ok = sistema.getGrafo().agregarNodo(nombre);//true se agrego correcta
                 if (!ok) {
                     JOptionPane.showMessageDialog(this, "El nodo ya existe o es inválido.");
-                } else {
-                    // (opcional) registrar en historial de operaciones si quieres
-                    // sistema.getHistorial().agregarFinal(new Operacion(...));
                 }
-
-                txtNodo.setText("");
-                refrescarTodo();
+                txtNodo.setText("");//limpia el cuadro de texto para ingresar otro nodo
+                refrescarTodo();//metodo interno que actualiza el grafo
             });
-
-            // ELIMINAR NODO
-            btnEliminarNodo.addActionListener(e -> {
-                String nombre = txtNodo.getText().trim();
+            //getText sirve para mostar lo que el usuarui escribio
+            btnEliminarNodo.addActionListener(e -> {String nombre = txtNodo.getText().trim();
                 if (nombre.isEmpty()) return;
-
-                boolean ok = sistema.getGrafo().eliminarNodo(nombre);
+                boolean ok = sistema.getGrafo().eliminarNodo(nombre);//true se elimino correcto
                 if (!ok) {
                     JOptionPane.showMessageDialog(this, "El nodo no existe.");
                 }
-
-                txtNodo.setText("");
+                txtNodo.setText(""); //limpia el campo
                 refrescarTodo();
             });
-
-            // AGREGAR RUTA
+            
             btnAgregarRuta.addActionListener(e -> {
                 try {
                     if (comboOrigen.getSelectedItem() == null || comboDestino.getSelectedItem() == null) {
@@ -229,6 +166,7 @@ public class MainFrame extends JFrame {
                     String o = comboOrigen.getSelectedItem().toString();
                     String d = comboDestino.getSelectedItem().toString();
                     int dist = Integer.parseInt(txtDistancia.getText().trim());
+                    //ontienen el texto de la distancia en forma de número
 
                     if (o.equals(d)) {
                         JOptionPane.showMessageDialog(this, "No puede conectar un nodo consigo mismo.");
@@ -239,18 +177,17 @@ public class MainFrame extends JFrame {
                         return;
                     }
 
-                    boolean ok = sistema.getGrafo().agregarArista(o, d, dist);
+                    boolean ok = sistema.getGrafo().agregarArista(o, d, dist);// true si se crea un arista correctamente
                     if (!ok) JOptionPane.showMessageDialog(this, "Error al agregar ruta (verifique nodos).");
 
-                    txtDistancia.setText("");
+                    txtDistancia.setText("");//limpia el campo de distancia
                     refrescarTodo();
 
                 } catch (NumberFormatException ex) {
                     JOptionPane.showMessageDialog(this, "Distancia inválida.");
+                    //ocurre cuando la distanci no es número
                 }
             });
-
-            // ELIMINAR RUTA
             btnEliminarRuta.addActionListener(e -> {
                 if (comboOrigen.getSelectedItem() == null || comboDestino.getSelectedItem() == null) {
                     JOptionPane.showMessageDialog(this, "No hay nodos suficientes.");
@@ -260,13 +197,11 @@ public class MainFrame extends JFrame {
                 String o = comboOrigen.getSelectedItem().toString();
                 String d = comboDestino.getSelectedItem().toString();
 
-                boolean ok = sistema.getGrafo().eliminarArista(o, d);
+                boolean ok = sistema.getGrafo().eliminarArista(o, d);//true si se elimina correcto
                 if (!ok) JOptionPane.showMessageDialog(this, "La ruta no existe.");
-
                 refrescarTodo();
             });
 
-            // CALCULAR RUTA MÁS CORTA
             btnCalcular.addActionListener(e -> {
                 if (comboOrigen.getSelectedItem() == null || comboDestino.getSelectedItem() == null) {
                     JOptionPane.showMessageDialog(this, "No hay nodos suficientes.");
@@ -287,17 +222,13 @@ public class MainFrame extends JFrame {
                     );
                 }
             });
-
-            // =============================
-            // ARMAR CONTENEDOR
-            // =============================
+            //los contenedores añaden los paneles que van aun panel grande(red de suministros)
             contenedor.add(scrollConexiones);
             contenedor.add(panelNodo);
             contenedor.add(panelRuta);
             contenedor.add(panelCalculo);
 
-            add(contenedor, BorderLayout.CENTER);
-
+            add(contenedor, BorderLayout.CENTER);//y lo ubica en el centro
             refrescarTodo();
         }
 
@@ -309,31 +240,28 @@ public class MainFrame extends JFrame {
         private void actualizarCombos() {
             String selO = (comboOrigen.getSelectedItem() != null) ? comboOrigen.getSelectedItem().toString() : null;
             String selD = (comboDestino.getSelectedItem() != null) ? comboDestino.getSelectedItem().toString() : null;
-
+            //limpia los elementos de la caja los deja vacío
             comboOrigen.removeAllItems();
             comboDestino.removeAllItems();
 
-            for (String nodo : sistema.getGrafo().getNombresNodos()) {
-                comboOrigen.addItem(nodo);
+            for (String nodo : sistema.getGrafo().getNombresNodos()) {//recorre todos los nodos
+                comboOrigen.addItem(nodo);//añade nodos en treeSet incluyendo a los nuevos nds
                 comboDestino.addItem(nodo);
             }
-
-            // intentar restaurar selección
+            // intentar restaurar selección, verifica que exista el nodo ingresado
             if (selO != null) comboOrigen.setSelectedItem(selO);
             if (selD != null) comboDestino.setSelectedItem(selD);
         }
     }
 
-    // ==========================
-    // PANEL INVENTARIO (IGUAL)
-    // ==========================
     private class PanelInventario extends JPanel {
-        private final DefaultTableModel model;
+        private final DefaultTableModel model;//modelo de datos deuna tabla
 
         public PanelInventario() {
             setLayout(new BorderLayout(10, 10));
 
             JPanel form = new JPanel(new GridLayout(2, 5, 10, 10));
+            //organiza datos en una tabla (fila, columna, espacio Hr, esapcio vrt)
 
             JTextField txtId = new JTextField();
             JTextField txtNombre = new JTextField();
@@ -362,11 +290,13 @@ public class MainFrame extends JFrame {
             JScrollPane sp = new JScrollPane(table);
 
             JPanel south = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+          //organiza los componentes como palabras en una linea y los aline a la derecha
             south.add(btnBaja);
 
             btnAlta.addActionListener(e -> {
                 try {
                     int id = Integer.parseInt(txtId.getText().trim());
+                    //convierte anumero el contendio de txtId
                     String nombre = txtNombre.getText().trim();
                     String categoria = txtCategoria.getText().trim();
                     int cant = Integer.parseInt(txtCantidad.getText().trim());
@@ -376,11 +306,11 @@ public class MainFrame extends JFrame {
                         return;
                     }
 
-                    boolean ok = sistema.altaProducto(id, nombre, categoria, cant);
+                    boolean ok = sistema.altaProducto(id, nombre, categoria, cant);//true si se agrega correctamente
                     if (!ok) JOptionPane.showMessageDialog(this, "ID ya existe.");
                     refrescar();
 
-                } catch (NumberFormatException ex) {
+                } catch (NumberFormatException ex) {//si lo ingresado no es numero
                     JOptionPane.showMessageDialog(this, "ID y Cantidad deben ser números.");
                 }
             });
@@ -432,20 +362,18 @@ public class MainFrame extends JFrame {
         }
     }
 
-    // ==========================
-    // PANEL HISTORIAL (IGUAL)
-    // ==========================
     private class PanelHistorial extends JPanel {
         private ListaDoblementeEnlazada.Nodo<Operacion> cursor;
         private final DefaultTableModel model;
+        
 
         public PanelHistorial() {
             setLayout(new BorderLayout(10, 10));
-
-            model = new DefaultTableModel(new Object[]{"Fecha","Tipo","ID","Producto","Categoría","Cantidad","Obs"}, 0);
+            
+            model = new DefaultTableModel(new Object[]{"Fecha","Tipo","ID","Producto","Categoría","Cantidad","Obs"}, 0);     
             JTable table = new JTable(model);
             JScrollPane sp = new JScrollPane(table);
-
+            
             JButton btnPrimero = new JButton("<< Primero");
             JButton btnAnterior = new JButton("< Anterior");
             JButton btnSiguiente = new JButton("Siguiente >");
@@ -479,13 +407,13 @@ public class MainFrame extends JFrame {
 
             add(sp, BorderLayout.CENTER);
             add(nav, BorderLayout.SOUTH);
-
+            
             cargarTablaCompleta();
             cursor = sistema.getHistorial().getInicio();
         }
 
         private void cargarTablaCompleta() {
-            model.setRowCount(0);
+            model.setRowCount(0);//borra todas las filas de la tabal
             ListaDoblementeEnlazada.Nodo<Operacion> it = sistema.getHistorial().getInicio();
             while (it != null) {
                 Operacion op = it.getDato();
@@ -495,7 +423,7 @@ public class MainFrame extends JFrame {
                         op.getCantidad(), op.getObservacion()
                 });
                 it = it.getSgt();
-            }
+            }//al final añade otra vez todo considerando las nuevas acualizaciones
         }
 
         private void mostrarCursor() {
@@ -508,8 +436,7 @@ public class MainFrame extends JFrame {
                             "Producto: " + op.getProductoId() + " - " + op.getProductoNombre() + "\n" +
                             "Categoría: " + op.getProductoCategoria() + "\n" +
                             "Cantidad: " + op.getCantidad() + "\n" +
-                            "Obs: " + op.getObservacion()
-            );
-        }
+                            "Obs: " + op.getObservacion());
+        }//para mostrar en especifico una ventana 
     }
 }
